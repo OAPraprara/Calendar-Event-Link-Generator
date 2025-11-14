@@ -374,8 +374,8 @@
             shortenBtn.innerHTML = '<span class="spinner"></span>Shortening...';
 
             try {
-                // Using Ulvis.net API - GET request
-                const apiUrl = `https://ulvis.net/API/write/get?url=${encodeURIComponent(currentLink)}&type=json`;
+                // Using is.gd API - Simple GET request with CORS support
+                const apiUrl = `https://is.gd/create.php?format=json&url=${encodeURIComponent(currentLink)}`;
                 
                 const response = await fetch(apiUrl);
                 
@@ -387,8 +387,8 @@
                 
                 console.log('API Response:', data);
                 
-                if (data.success && data.data && data.data.url) {
-                    shortLink = data.data.url;
+                if (data.shorturl) {
+                    shortLink = data.shorturl;
                     
                     // Display the shortened link
                     document.getElementById('shortLink').textContent = shortLink;
@@ -400,6 +400,8 @@
                     
                     // Scroll to shortened link
                     document.getElementById('shortLinkSection').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                } else if (data.errormessage) {
+                    throw new Error(data.errormessage);
                 } else {
                     throw new Error('Invalid response from API');
                 }
