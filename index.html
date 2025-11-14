@@ -56,8 +56,7 @@
 
         input[type="text"],
         input[type="datetime-local"],
-        textarea,
-        select {
+        textarea {
             width: 100%;
             padding: 12px;
             border: 2px solid #e0e0e0;
@@ -69,8 +68,7 @@
 
         input[type="text"]:focus,
         input[type="datetime-local"]:focus,
-        textarea:focus,
-        select:focus {
+        textarea:focus {
             outline: none;
             border-color: #667eea;
         }
@@ -255,38 +253,6 @@
             </div>
 
             <div class="form-group">
-                <label for="timezone">Timezone <span class="required">*</span></label>
-                <select id="timezone" required>
-                    <option value="0" selected>GMT (UTC+0:00) - Greenwich Mean Time</option>
-                    <option value="-12">UTC-12:00 - Baker Island</option>
-                    <option value="-11">UTC-11:00 - American Samoa</option>
-                    <option value="-10">UTC-10:00 - Hawaii</option>
-                    <option value="-9">UTC-09:00 - Alaska</option>
-                    <option value="-8">UTC-08:00 - Pacific Time (US & Canada)</option>
-                    <option value="-7">UTC-07:00 - Mountain Time (US & Canada)</option>
-                    <option value="-6">UTC-06:00 - Central Time (US & Canada)</option>
-                    <option value="-5">UTC-05:00 - Eastern Time (US & Canada)</option>
-                    <option value="-4">UTC-04:00 - Atlantic Time</option>
-                    <option value="-3">UTC-03:00 - Buenos Aires, Brasilia</option>
-                    <option value="-2">UTC-02:00 - Mid-Atlantic</option>
-                    <option value="-1">UTC-01:00 - Azores</option>
-                    <option value="1">UTC+01:00 - Central European Time</option>
-                    <option value="2">UTC+02:00 - Eastern European Time</option>
-                    <option value="3">UTC+03:00 - East Africa Time (Kenya, Tanzania)</option>
-                    <option value="4">UTC+04:00 - Dubai, Baku</option>
-                    <option value="5">UTC+05:00 - Pakistan, Maldives</option>
-                    <option value="5.5">UTC+05:30 - India, Sri Lanka</option>
-                    <option value="6">UTC+06:00 - Bangladesh, Bhutan</option>
-                    <option value="7">UTC+07:00 - Bangkok, Jakarta</option>
-                    <option value="8">UTC+08:00 - China, Singapore, Philippines</option>
-                    <option value="9">UTC+09:00 - Japan, Korea</option>
-                    <option value="10">UTC+10:00 - Sydney, Melbourne</option>
-                    <option value="11">UTC+11:00 - Solomon Islands</option>
-                    <option value="12">UTC+12:00 - Fiji, New Zealand</option>
-                </select>
-            </div>
-
-            <div class="form-group">
                 <label for="eventDescription">Description (Optional)</label>
                 <textarea id="eventDescription" placeholder="Add event details, agenda, or any relevant information..."></textarea>
             </div>
@@ -329,9 +295,8 @@
             const endTime = document.getElementById('endTime').value;
             const description = document.getElementById('eventDescription').value;
             const location = document.getElementById('eventLocation').value;
-            const timezoneOffset = parseFloat(document.getElementById('timezone').value);
             
-            console.log('Form values:', { title, startTime, endTime, timezoneOffset });
+            console.log('Form values:', { title, startTime, endTime });
             
             // Validate required fields
             if (!title || !startTime || !endTime) {
@@ -345,19 +310,9 @@
                 return;
             }
 
-            // Parse the datetime-local values (which are in local time)
-            // Then adjust them based on the selected timezone
+            // Convert datetime-local to Google Calendar format (yyyyMMddTHHmmssZ)
             const startDate = new Date(startTime);
             const endDate = new Date(endTime);
-            
-            // The datetime-local gives us a date in the user's local timezone
-            // We need to treat it as if it's in the selected timezone
-            // So we remove the local offset and add the selected timezone offset
-            const localOffset = startDate.getTimezoneOffset(); // minutes
-            
-            // Adjust to treat the input as being in the selected timezone
-            const adjustedStart = new Date(startDate.getTime() + (localOffset * 60000) - (timezoneOffset * 3600000));
-            const adjustedEnd = new Date(endDate.getTime() + (localOffset * 60000) - (timezoneOffset * 3600000));
 
             // Format: yyyyMMddTHHmmssZ (UTC)
             const formatDate = (date) => {
@@ -370,7 +325,7 @@
                 return `${year}${month}${day}T${hours}${minutes}${seconds}Z`;
             };
 
-            const dates = `${formatDate(adjustedStart)}/${formatDate(adjustedEnd)}`;
+            const dates = `${formatDate(startDate)}/${formatDate(endDate)}`;
 
             // Build the URL
             let calendarUrl = 'https://calendar.google.com/calendar/u/0/r/eventedit?';
