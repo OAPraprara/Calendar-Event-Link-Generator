@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Calendar Event Link Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 700px;
+            width: 100%;
+            padding: 40px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        input[type="text"],
+        input[type="datetime-local"],
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+            font-family: inherit;
+        }
+
+        input[type="text"]:focus,
+        input[type="datetime-local"]:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .time-inputs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .result-section {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .result-section.show {
+            display: block;
+        }
+
+        .result-label {
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .link-container {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border: 2px solid #e0e0e0;
+            word-break: break-all;
+            font-size: 13px;
+            color: #666;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+
+        .button-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .secondary-button {
+            background: white;
+            color: #667eea;
+            border: 2px solid #667eea;
+        }
+
+        .secondary-button:hover {
+            background: #f0f4ff;
+        }
+
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 10px;
+            display: none;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .success-message.show {
+            display: block;
+        }
+
+        .short-link-section {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 2px solid #e0e0e0;
+        }
+
+        .short-link-container {
+            background: #f0f4ff;
+            padding: 15px;
+            border-radius: 8px;
+            border: 2px solid #667eea;
+            word-break: break-all;
+            font-size: 14px;
+            color: #333;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border: 2px solid #ffffff;
+            border-top: 2px solid transparent;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-right: 8px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .required {
+            color: #e74c3c;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 25px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+
+            .time-inputs,
+            .button-group {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📅 Calendar Event Link Generator</h1>
+        <p class="subtitle">Create a shareable Google Calendar event link in seconds</p>
+
+        <div id="eventForm">
+            <div class="form-group">
+                <label for="eventTitle">Event Title <span class="required">*</span></label>
+                <input type="text" id="eventTitle" placeholder="e.g., Team Meeting" required>
+            </div>
+
+            <div class="form-group">
+                <div class="time-inputs">
+                    <div>
+                        <label for="startTime">Start Date & Time <span class="required">*</span></label>
+                        <input type="datetime-local" id="startTime" required>
+                    </div>
+                    <div>
+                        <label for="endTime">End Date & Time <span class="required">*</span></label>
+                        <input type="datetime-local" id="endTime" required>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="eventDescription">Description (Optional)</label>
+                <textarea id="eventDescription" placeholder="Add event details, agenda, or any relevant information..."></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="eventLocation">Location (Optional)</label>
+                <input type="text" id="eventLocation" placeholder="e.g., RB 100, Zoom link, or address">
+            </div>
+
+            <button type="button" onclick="generateLink()">Generate Calendar Link</button>
+        </div>
+
+        <div class="result-section" id="resultSection">
+            <div class="result-label">Your Calendar Link:</div>
+            <div class="link-container" id="generatedLink"></div>
+            
+            <div class="short-link-section" id="shortLinkSection" style="display: none;">
+                <div class="result-label">Shortened Link:</div>
+                <div class="short-link-container" id="shortLink"></div>
+            </div>
+            
+            <div class="button-group">
+                <button type="button" onclick="shortenLink()" id="shortenBtn">🔗 Shorten Link</button>
+                <button type="button" onclick="copyLink()" class="secondary-button" id="copyBtn">📋 Copy Link</button>
+            </div>
+            <button type="button" onclick="openLink()" style="margin-top: 10px;">📅 Open in Calendar</button>
+            <div class="success-message" id="successMessage">✓ Link copied to clipboard!</div>
+        </div>
+    </div>
+
+    <script>
+        let currentLink = '';
+        let shortLink = '';
+
+        function generateLink() {
+            console.log('generateLink function called');
+            
+            const title = document.getElementById('eventTitle').value;
+            const startTime = document.getElementById('startTime').value;
+            const endTime = document.getElementById('endTime').value;
+            const description = document.getElementById('eventDescription').value;
+            const location = document.getElementById('eventLocation').value;
+            
+            console.log('Form values:', { title, startTime, endTime });
+            
+            // Validate required fields
+            if (!title || !startTime || !endTime) {
+                document.getElementById('successMessage').textContent = '⚠️ Please fill in all required fields!';
+                document.getElementById('successMessage').style.background = '#f8d7da';
+                document.getElementById('successMessage').style.color = '#721c24';
+                document.getElementById('successMessage').classList.add('show');
+                setTimeout(() => {
+                    document.getElementById('successMessage').classList.remove('show');
+                }, 3000);
+                return;
+            }
+
+            // Convert datetime-local to Google Calendar format (yyyyMMddTHHmmssZ)
+            const startDate = new Date(startTime);
+            const endDate = new Date(endTime);
+
+            // Format: yyyyMMddTHHmmssZ (UTC)
+            const formatDate = (date) => {
+                const year = date.getUTCFullYear();
+                const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+                const day = String(date.getUTCDate()).padStart(2, '0');
+                const hours = String(date.getUTCHours()).padStart(2, '0');
+                const minutes = String(date.getUTCMinutes()).padStart(2, '0');
+                const seconds = String(date.getUTCSeconds()).padStart(2, '0');
+                return `${year}${month}${day}T${hours}${minutes}${seconds}Z`;
+            };
+
+            const dates = `${formatDate(startDate)}/${formatDate(endDate)}`;
+
+            // Build the URL
+            let calendarUrl = 'https://calendar.google.com/calendar/u/0/r/eventedit?';
+            calendarUrl += `text=${encodeURIComponent(title)}`;
+            calendarUrl += `&dates=${dates}`;
+            
+            if (description) {
+                calendarUrl += `&details=${encodeURIComponent(description)}`;
+            }
+            
+            if (location) {
+                calendarUrl += `&location=${encodeURIComponent(location)}`;
+            }
+
+            currentLink = calendarUrl;
+            shortLink = ''; // Reset short link
+
+            // Display the result
+            document.getElementById('generatedLink').textContent = calendarUrl;
+            document.getElementById('resultSection').classList.add('show');
+            document.getElementById('successMessage').classList.remove('show');
+            document.getElementById('shortLinkSection').style.display = 'none';
+            document.getElementById('shortenBtn').disabled = false;
+            document.getElementById('shortenBtn').innerHTML = '🔗 Shorten Link';
+            document.getElementById('shortenBtn').style.background = '';
+            document.getElementById('copyBtn').textContent = '📋 Copy Link';
+
+            // Scroll to result
+            document.getElementById('resultSection').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        async function shortenLink() {
+            if (!currentLink) {
+                document.getElementById('successMessage').textContent = '⚠️ Please generate a calendar link first!';
+                document.getElementById('successMessage').style.background = '#f8d7da';
+                document.getElementById('successMessage').style.color = '#721c24';
+                document.getElementById('successMessage').classList.add('show');
+                setTimeout(() => {
+                    document.getElementById('successMessage').classList.remove('show');
+                }, 3000);
+                return;
+            }
+
+            const shortenBtn = document.getElementById('shortenBtn');
+            shortenBtn.disabled = true;
+            shortenBtn.innerHTML = '<span class="spinner"></span>Shortening...';
+
+            try {
+                // Using Ulvis.net API - GET request
+                const apiUrl = `https://ulvis.net/API/write/get?url=${encodeURIComponent(currentLink)}&type=json`;
+                
+                const response = await fetch(apiUrl);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                
+                console.log('API Response:', data);
+                
+                if (data.success && data.data && data.data.url) {
+                    shortLink = data.data.url;
+                    
+                    // Display the shortened link
+                    document.getElementById('shortLink').textContent = shortLink;
+                    document.getElementById('shortLinkSection').style.display = 'block';
+                    document.getElementById('copyBtn').textContent = '📋 Copy Shortened Link';
+                    
+                    shortenBtn.innerHTML = '✓ Link Shortened!';
+                    shortenBtn.style.background = '#28a745';
+                    
+                    // Scroll to shortened link
+                    document.getElementById('shortLinkSection').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                } else {
+                    throw new Error('Invalid response from API');
+                }
+                
+            } catch (error) {
+                console.error('Error shortening URL:', error);
+                document.getElementById('successMessage').textContent = '⚠️ Failed to shorten link. You can still copy the original link.';
+                document.getElementById('successMessage').style.background = '#f8d7da';
+                document.getElementById('successMessage').style.color = '#721c24';
+                document.getElementById('successMessage').classList.add('show');
+                setTimeout(() => {
+                    document.getElementById('successMessage').classList.remove('show');
+                }, 3000);
+                
+                shortenBtn.innerHTML = '🔗 Shorten Link';
+                shortenBtn.disabled = false;
+                shortenBtn.style.background = '';
+            }
+        }
+
+        function copyLink() {
+            const linkToCopy = shortLink || currentLink;
+            
+            if (!linkToCopy) {
+                document.getElementById('successMessage').textContent = '⚠️ No link to copy! Please generate a calendar link first.';
+                document.getElementById('successMessage').style.background = '#f8d7da';
+                document.getElementById('successMessage').style.color = '#721c24';
+                document.getElementById('successMessage').classList.add('show');
+                setTimeout(() => {
+                    document.getElementById('successMessage').classList.remove('show');
+                }, 3000);
+                return;
+            }
+
+            navigator.clipboard.writeText(linkToCopy).then(() => {
+                const successMsg = document.getElementById('successMessage');
+                successMsg.textContent = shortLink ? '✓ Shortened link copied to clipboard!' : '✓ Link copied to clipboard!';
+                successMsg.style.background = '#d4edda';
+                successMsg.style.color = '#155724';
+                successMsg.classList.add('show');
+                setTimeout(() => {
+                    successMsg.classList.remove('show');
+                }, 3000);
+            }).catch(err => {
+                // Fallback for clipboard API failure
+                const textArea = document.createElement('textarea');
+                textArea.value = linkToCopy;
+                textArea.style.position = 'fixed';
+                textArea.style.left = '-999999px';
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    const successMsg = document.getElementById('successMessage');
+                    successMsg.textContent = shortLink ? '✓ Shortened link copied!' : '✓ Link copied!';
+                    successMsg.style.background = '#d4edda';
+                    successMsg.style.color = '#155724';
+                    successMsg.classList.add('show');
+                    setTimeout(() => {
+                        successMsg.classList.remove('show');
+                    }, 3000);
+                } catch (e) {
+                    console.error('Copy failed:', e);
+                }
+                document.body.removeChild(textArea);
+            });
+        }
+
+        function openLink() {
+            const linkToOpen = currentLink; // Always open the full calendar link
+            if (linkToOpen) {
+                window.open(linkToOpen, '_blank');
+            }
+        }
+
+        // Set default times (current time and 1 hour later)
+        window.addEventListener('load', () => {
+            const now = new Date();
+            const later = new Date(now.getTime() + 60 * 60 * 1000); // 1 hour later
+
+            const formatForInput = (date) => {
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                const hours = String(date.getHours()).padStart(2, '0');
+                const minutes = String(date.getMinutes()).padStart(2, '0');
+                return `${year}-${month}-${day}T${hours}:${minutes}`;
+            };
+
+            document.getElementById('startTime').value = formatForInput(now);
+            document.getElementById('endTime').value = formatForInput(later);
+        });
+    </script>
+</body>
+</html>
